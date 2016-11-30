@@ -23,6 +23,7 @@ from signal import alarm, signal, SIGALRM, SIGKILL
 ########################
 led_pin = 7 # LED
 btn_pin = 18 # pin for the start button
+shutdown_btn_pin = 11 # pin for the shutdown button
 
 total_pics = 4 # number of pics to be taken
 capture_delay = 1 # delay between pics
@@ -346,6 +347,13 @@ def start_photobooth():
 	show_image(real_path + "/intro.png");
 	GPIO.output(led_pin,True) #turn on the LED
 
+def shutdown():
+    print("Your RaspberryPi will be shut down in few seconds...")
+    # config sudoers to be available to execute shutdown whitout password
+    # Add this line in file /etc/sudoers
+    # myUser ALL = (root) NOPASSWD: /sbin/halt
+    os.system("sudo halt -p")
+
 ####################
 ### Main Program ###
 ####################
@@ -353,6 +361,10 @@ def start_photobooth():
 ## clear the previously stored pics based on config settings
 if config.clear_on_startup:
 	clear_pics(1)
+
+## Add event listener to catch shutdown request
+if config.enable_shutdown_btn:
+    GPIO.add_event_detect(shutdown_btn_pin, GPIO.BOTH, callback=shutdown, bouncetime=75)
 
 print "Photo booth app running..."
 for x in range(0, 5): #blink light to show the app is running
