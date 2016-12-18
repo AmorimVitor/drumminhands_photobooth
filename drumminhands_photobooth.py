@@ -69,6 +69,7 @@ client = pytumblr.TumblrRestClient(
 GPIO.setmode(GPIO.BOARD)
 GPIO.setup(led_pin, GPIO.OUT)  # LED
 GPIO.setup(btn_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.setup(shutdown_btn_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 # for some reason the pin turns on at the beginning of the program. Why?
 GPIO.output(led_pin, False)
 
