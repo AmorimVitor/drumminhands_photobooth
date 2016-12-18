@@ -51,4 +51,4 @@ camera_high_res_h = 972  # height
 # Configure sudoers on your system, to can execute shutdown whitout password
 # Add this line in file /etc/sudoers
 # myUser ALL = (root) NOPASSWD: /sbin/halt
-enabled_shutdown_btn = False
+enable_shutdown_btn = False
