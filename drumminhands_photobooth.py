@@ -78,8 +78,9 @@ pygame.init()
 pygame.display.set_mode((config.monitor_w, config.monitor_h))
 screen = pygame.display.get_surface()
 pygame.display.set_caption('Photo Booth Pics')
-pygame.mouse.set_visible(False)  # hide the mouse cursor
-pygame.display.toggle_fullscreen()
+if not config.debug_mode:
+    pygame.mouse.set_visible(False)  # hide the mouse cursor
+    pygame.display.toggle_fullscreen()
 
 #############
 # Functions #
@@ -238,7 +239,8 @@ def start_photobooth():
     camera = picamera.PiCamera()
     camera.vflip = False
     camera.hflip = True  # flip for preview, showing users a mirror image
-    camera.saturation = -100  # comment out this line if you want color images
+    if not camera_color_preview:
+        camera.saturation = -100
     camera.iso = config.camera_iso
 
     pixel_width = 0  # local variable declaration

@@ -48,7 +48,13 @@ camera_iso = 800
 camera_high_res_w = 1296  # width
 camera_high_res_h = 972  # height
 
+# enable color on camera preview
+camera_color_preview = False
+
 # Configure sudoers on your system, to can execute shutdown whitout password
 # Add this line in file /etc/sudoers
 # myUser ALL = (root) NOPASSWD: /sbin/halt
 enable_shutdown_btn = False
+
+# Debug mode
+debug_mode = False
