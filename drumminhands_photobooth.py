@@ -239,7 +239,7 @@ def start_photobooth():
     camera = picamera.PiCamera()
     camera.vflip = False
     camera.hflip = True  # flip for preview, showing users a mirror image
-    if not camera_color_preview:
+    if not config.camera_color_preview:
         camera.saturation = -100
     camera.iso = config.camera_iso
 
@@ -409,7 +409,7 @@ def start_photobooth():
     GPIO.output(led_pin, True)  # turn on the LED
 
 
-def shutdown():
+def shutdown(self):
     print("Your RaspberryPi will be shut down in few seconds...")
     # config sudoers to be available to execute shutdown whitout password
     # Add this line in file /etc/sudoers
