@@ -52,6 +52,19 @@ offset_y = 0  # how far off to left corner to display photos
 replay_delay = 1
 replay_cycles = 2  # how many times to show each photo on-screen after taking
 
+#######################
+# Photomathon image #
+#######################
+# image width
+image_w = config.camera_high_res_w 
+# image height
+image_h = config.camera_high_res_h
+margin = 20
+thumbnail_h = image_h/2-margin*2
+thumbnail_w = image_w/2-margin*2
+axe_x = image_h/2+margin
+axe_y = image_w/2+margin
+
 ################
 # Other Config #
 ################
@@ -383,6 +396,10 @@ def start_photobooth():
                         print('Something went wrong. Could not write file.')
                         sys.exit(0)  # quit Python
 
+    if config.make_photomaton:
+        print("Creating an photomaton picture")
+        photomaton_image()
+
     #
     #  Begin Step 4
     #
@@ -416,7 +433,39 @@ def shutdown(self):
     # myUser ALL = (root) NOPASSWD: /sbin/halt
     os.system("sudo halt -p")
 
+def load_last_images():
+    images = []
+    files_list = glob.glob(config.file_path+'*.jpg')
+    files_list = sorted(files_list)
+    #return the 4 last images
+    for i in range(4,0,-1):
+        images.append(pygame.image.load(files_list[-i]))
+    return images
 
+def photomaton_image():
+    images = load_last_images()
+	
+    #White background
+    merged = pygame.Surface((image_h, image_w+200), pygame.SRCALPHA)
+    merged.fill((250, 250, 250))
+
+    #Build of photomaton image
+    i = 1
+    for image in images:
+        image = pygame.transform.scale(image, (thumbnail_h, thumbnail_w))
+        if i == 1:
+            merged.blit(image,(margin, margin))
+        elif i == 2:
+            merged.blit(image,(axe_x, margin))
+        elif i == 3:
+            merged.blit(image,(margin,axe_y))
+        elif i == 4:
+            merged.blit(image,(axe_x, axe_y))
+        i += 1
+    now = time.strftime("%Y-%m-%d-%H-%M-%S")  
+    filename_merged = config.file_path + "merge/" + str(now) + '.jpg'	
+    pygame.image.save(merged, filename_merged)
+	
 ##################
 #  Main Program  #
 ##################
