@@ -31,7 +31,7 @@ capture_count_pics = True
 # True to make an animated gif. False to post 4 jpgs into one post.
 make_gifs = True
 # True to make an photomaton image. False do nothing.
-make_photomaton = True
+make_photo_booth = True
 # True to save high res pics from camera.
 # If also uploading, the program will also convert each image
 # to a smaller image before making the gif.

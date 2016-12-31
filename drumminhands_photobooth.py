@@ -53,7 +53,7 @@ replay_delay = 1
 replay_cycles = 2  # how many times to show each photo on-screen after taking
 
 #######################
-# Photomathon image #
+# Photo booth image #
 #######################
 # image width
 image_w = config.camera_high_res_w 
@@ -396,9 +396,9 @@ def start_photobooth():
                         print('Something went wrong. Could not write file.')
                         sys.exit(0)  # quit Python
 
-    if config.make_photomaton:
-        print("Creating an photomaton picture")
-        photomaton_image()
+    if config.make_photo_booth:
+        print("Creating an photo_booth picture")
+        photo_booth_image()
 
     #
     #  Begin Step 4
@@ -442,14 +442,14 @@ def load_last_images():
         images.append(pygame.image.load(files_list[-i]))
     return images
 
-def photomaton_image():
+def photo_booth_image():
     images = load_last_images()
 	
     #White background
     merged = pygame.Surface((image_h, image_w+200), pygame.SRCALPHA)
     merged.fill((250, 250, 250))
 
-    #Build of photomaton image
+    #Build of photo_booth image
     i = 1
     for image in images:
         image = pygame.transform.scale(image, (thumbnail_h, thumbnail_w))
