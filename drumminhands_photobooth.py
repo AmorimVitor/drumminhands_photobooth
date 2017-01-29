@@ -17,20 +17,21 @@ import pygame
 from pygame.locals import QUIT, KEYDOWN, K_ESCAPE
 import pytumblr  # https://github.com/tumblr/pytumblr
 import config  # this is the config python file config.py
+import cups
 
 ####################
 # Variables Config #
 ####################
-led_pin = 7  # LED
-btn_pin = 18  # pin for the start button
-shutdown_btn_pin = 11  # pin for the shutdown button
+led_pin = 27  # LED
+btn_pin = 17  # pin for the start button
+shutdown_btn_pin = 18  # pin for the shutdown button
+print_btn_pin = 12  # pin for the print button
 
 total_pics = 4  # number of pics to be taken
 capture_delay = 1  # delay between pics
-prep_delay = 5  # number of seconds at step 1 as users prep to have photo taken
+prep_delay = 3  # number of seconds at step 1 as users prep to have photo taken
 gif_delay = 100  # How much time between frames in the animated gif
-# how long to display finished message before beginning a new session
-restart_delay = 10
+restart_delay = 5  # how long to display finished message before beginning a new session
 test_server = 'www.google.com'
 
 # full frame of v1 camera is 2592x1944. Wide screen max is 2592,1555
@@ -53,17 +54,27 @@ replay_delay = 1
 replay_cycles = 2  # how many times to show each photo on-screen after taking
 
 #######################
-# Photo booth image #
+# Photobooth image #
 #######################
-# image width
-image_w = config.camera_high_res_w 
-# image height
-image_h = config.camera_high_res_h
-margin = 20
-thumbnail_h = image_h/2-margin*2
-thumbnail_w = image_w/2-margin*2
-axe_x = image_h/2+margin
-axe_y = image_w/2+margin
+# Image ratio 4/3
+image_h = 525
+image_w = 700
+margin = 50
+
+# Output image ration 3/2
+output_h = 1200
+output_w = 1800
+
+if not config.camera_landscape:
+    tmp = image_h
+    image_h = image_w
+    image_w = tmp
+    tmp = output_h
+    output_h = output_w
+    output_w = tmp
+    tmp = high_res_h
+    high_res_h = high_res_w
+    high_res_w = tmp
 
 ################
 # Other Config #
@@ -71,18 +82,20 @@ axe_y = image_w/2+margin
 real_path = os.path.dirname(os.path.realpath(__file__))
 
 # Setup the tumblr OAuth Client
-client = pytumblr.TumblrRestClient(
-    config.consumer_key,
-    config.consumer_secret,
-    config.oath_token,
-    config.oath_secret,
-)
+if config.post_online:  # turn off posting pics online in config.py
+    client = pytumblr.TumblrRestClient(
+        config.consumer_key,
+        config.consumer_secret,
+        config.oath_token,
+        config.oath_secret,
+    )
 
 # GPIO setup
-GPIO.setmode(GPIO.BOARD)
+GPIO.setmode(GPIO.BCM)
 GPIO.setup(led_pin, GPIO.OUT)  # LED
 GPIO.setup(btn_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-GPIO.setup(shutdown_btn_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+GPIO.setup(shutdown_btn_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.setup(print_btn_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 # for some reason the pin turns on at the beginning of the program. Why?
 GPIO.output(led_pin, False)
 
@@ -99,10 +112,11 @@ if not config.debug_mode:
 # Functions #
 #############
 
-# clean up running programs as needed when main program exits
-
 
 def cleanup():
+    """
+    @brief      clean up running programs as needed when main program exits
+    """
     print('Ended abruptly')
     pygame.quit()
     GPIO.cleanup()
@@ -110,19 +124,23 @@ def cleanup():
 
 atexit.register(cleanup)
 
-# A function to handle keyboard/mouse/device input events
-
 
 def input(events):
+    """
+    @brief      A function to handle keyboard/mouse/device input events
+    @param      events  The events
+    """
     for event in events:  # Hit the ESC key to quit the slideshow.
         if (event.type == QUIT or
                 (event.type == KEYDOWN and event.key == K_ESCAPE)):
             pygame.quit()
 
-# delete files in folder
-
 
 def clear_pics(channel):
+    """
+    @brief      delete files in pics folder
+    @param      channel  The channel
+    """
     files = glob.glob(config.file_path + '*')
     for f in files:
         os.remove(f)
@@ -134,10 +152,12 @@ def clear_pics(channel):
         GPIO.output(led_pin, False)
         sleep(0.25)
 
-# check if connected to the internet
-
 
 def is_connected():
+    """
+    @brief      Determines if connected to the internet
+    @return     True if connected, False otherwise.
+    """
     try:
         # see if we can resolve the host name -- tells us if there is a DNS
         # listening
@@ -150,15 +170,19 @@ def is_connected():
         pass
     return False
 
-# set variables to properly display the image on screen at right ratio
-
 
 def set_demensions(img_w, img_h):
-    # Note this only works when in booting in desktop mode.
-    # When running in terminal, the size is not correct (it displays small).
-    # Why?
+    """
+    @brief      Set variables to properly display the image on screen at right ratio
+                Note this only works when in booting in desktop mode.
+                When running in terminal, the size is not correct (it displays small).
+                Why?
 
-        # connect to global vars
+    @param      img_w  The image w
+    @param      img_h  The image h
+    """
+
+    # connect to global vars
     global transform_y, transform_x, offset_y, offset_x
 
     # based on output screen resolution, calculate how to display
@@ -193,12 +217,14 @@ def set_demensions(img_w, img_h):
 #     print "offset_y: "+ str(offset_y)
 #     print "offset_x: "+ str(offset_x)
 
-# display one image on screen
-
 
 def show_image(image_path):
+    """
+    @brief      Display one image on screen
+    @param      image_path  The image path
+    """
 
-        # clear the screen
+    # clear the screen
     screen.fill((0, 0, 0))
 
     # load the image
@@ -213,26 +239,30 @@ def show_image(image_path):
     screen.blit(img, (offset_x, offset_y))
     pygame.display.flip()
 
-# display a blank screen
-
 
 def clear_screen():
+    """
+    @brief      display a blank screen
+    """
     screen.fill((0, 0, 0))
     pygame.display.flip()
 
-# display a group of images
-
 
 def display_pics(jpg_group):
+    """
+    @brief      Display a group of images
+    @param      jpg_group  The jpg group
+    """
     for i in range(0, replay_cycles):  # show pics a few times
         for i in range(1, total_pics + 1):  # show each pic
             show_image(config.file_path + jpg_group + "-0" + str(i) + ".jpg")
             time.sleep(replay_delay)  # pause
 
-# define the photo taking function for when the big button is pressed
-
 
 def start_photobooth():
+    """
+    @brief      Define the photo taking function for when the big button is pressed
+    """
 
     # press escape to exit pygame. Then press ctrl-c to exit python.
     input(pygame.event.get())
@@ -250,8 +280,6 @@ def start_photobooth():
     clear_screen()
 
     camera = picamera.PiCamera()
-    camera.vflip = False
-    camera.hflip = True  # flip for preview, showing users a mirror image
     if not config.camera_color_preview:
         camera.saturation = -100
     camera.iso = config.camera_iso
@@ -261,7 +289,7 @@ def start_photobooth():
 
     if config.hi_res_pics:
         # set camera resolution to high res
-        camera.resolution = (high_res_w, high_res_h)
+        camera.resolution = (high_res_w, high_res_h)         
     else:
         pixel_width = 500  # maximum width of animated gif on tumblr
         pixel_height = config.monitor_h * pixel_width // config.monitor_w
@@ -276,22 +304,27 @@ def start_photobooth():
 
     # get the current date and time for the start of the filename
     now = time.strftime("%Y-%m-%d-%H-%M-%S")
-
+        
     if config.capture_count_pics:
         try:  # take the photos
             for i in range(1, total_pics + 1):
-                camera.hflip = True  # preview a mirror image
-                # start preview at low res but the right ratio
-                camera.start_preview(resolution=(
-                    config.monitor_w, config.monitor_h))
+                if config.camera_landscape:
+                    camera.hflip = True  # preview a mirror image
+                    camera.start_preview(resolution=(config.monitor_w, config.monitor_h)) 
+                else: 
+                    camera.vflip = True
+                    camera.start_preview(rotation=270,resolution=(config.monitor_w, config.monitor_h))
                 time.sleep(2)  # warm up camera
                 GPIO.output(led_pin, True)  # turn on the LED
                 filename = config.file_path + now + '-0' + str(i) + '.jpg'
-                camera.hflip = False  # flip back when taking photo
+                camera.stop_preview()
+                if config.camera_landscape:
+                    camera.hflip = False  # flip back when taking photo
+                else: 
+                    camera.vflip = False
                 camera.capture(filename)
                 print(filename)
                 GPIO.output(led_pin, False)  # turn off the LED
-                camera.stop_preview()
                 show_image(real_path + "/pose" + str(i) + ".png")
                 time.sleep(capture_delay)  # pause in-between shots
                 clear_screen()
@@ -300,8 +333,12 @@ def start_photobooth():
         finally:
             camera.close()
     else:
+        print("low resolution")
         # start preview at low res but the right ratio
-        camera.start_preview(resolution=(config.monitor_w, config.monitor_h))
+        if config.camera_landscape:
+            camera.start_preview(resolution=(config.monitor_w, config.monitor_h))
+        else: 
+            camera.start_preview(rotation=270,resolution=(config.monitor_w, config.monitor_h))
         time.sleep(2)  # warm up camera
 
         try:  # take the photos
@@ -396,9 +433,9 @@ def start_photobooth():
                         print('Something went wrong. Could not write file.')
                         sys.exit(0)  # quit Python
 
-    if config.make_photo_booth:
-        print("Creating an photo_booth picture")
-        photo_booth_image()
+    if config.make_photobooth_image:
+        print("Creating a photo booth picture")
+        photobooth_image(now)
 
     #
     #  Begin Step 4
@@ -426,49 +463,63 @@ def start_photobooth():
     GPIO.output(led_pin, True)  # turn on the LED
 
 
-def shutdown(self):
+def shutdown(channel):
+    """
+    @brief      Shutdown the RaspberryPi
+                config sudoers to be available to execute shutdown whitout password
+                Add this line in file /etc/sudoers
+                myUser ALL = (root) NOPASSWD: /sbin/halt
+    """
     print("Your RaspberryPi will be shut down in few seconds...")
-    # config sudoers to be available to execute shutdown whitout password
-    # Add this line in file /etc/sudoers
-    # myUser ALL = (root) NOPASSWD: /sbin/halt
     os.system("sudo halt -p")
 
-def load_last_images():
-    images = []
-    files_list = glob.glob(config.file_path+'*.jpg')
-    files_list = sorted(files_list)
-    #return the 4 last images
-    for i in range(4,0,-1):
-        images.append(pygame.image.load(files_list[-i]))
-    return images
 
-def photo_booth_image():
-    images = load_last_images()
-	
-    #White background
-    merged = pygame.Surface((image_h, image_w+200), pygame.SRCALPHA)
-    merged.fill((250, 250, 250))
+def photobooth_image(now):
+        
+    # Load images
+    bgimage = pygame.image.load("bgimage.png")
+    image1 = pygame.image.load(config.file_path + now + "-01.jpg")
+    image2 = pygame.image.load(config.file_path + now + "-02.jpg")
+    image3 = pygame.image.load(config.file_path + now + "-03.jpg")
+    image4 = pygame.image.load(config.file_path + now + "-04.jpg")
 
-    #Build of photo_booth image
-    i = 1
-    for image in images:
-        image = pygame.transform.scale(image, (thumbnail_h, thumbnail_w))
-        if i == 1:
-            merged.blit(image,(margin, margin))
-        elif i == 2:
-            merged.blit(image,(axe_x, margin))
-        elif i == 3:
-            merged.blit(image,(margin,axe_y))
-        elif i == 4:
-            merged.blit(image,(axe_x, axe_y))
-        i += 1
-    now = time.strftime("%Y-%m-%d-%H-%M-%S")  
-    filename_merged = config.file_path + "merge/" + str(now) + '.jpg'	
-    pygame.image.save(merged, filename_merged)
-	
+    # Rotate Background
+    if not config.camera_landscape:
+        bgimage = pygame.transform.rotate(bgimage, 270)
+        
+    # Resize images
+    bgimage = pygame.transform.scale(bgimage, (output_w, output_h))
+    image1 = pygame.transform.scale(image1, (image_w, image_h))
+    image2 = pygame.transform.scale(image2, (image_w, image_h))
+    image3 = pygame.transform.scale(image3, (image_w, image_h))
+    image4 = pygame.transform.scale(image4, (image_w, image_h))
+        
+    # Merge images
+    bgimage.blit(image1, (margin, margin))
+    bgimage.blit(image2, (margin * 2 + image_w, margin))
+    bgimage.blit(image3, (margin, margin * 2 + image_h))
+    bgimage.blit(image4, (margin * 2 + image_w, margin * 2 + image_h))
+
+    pygame.image.save(bgimage, config.file_path + "/photobooth/" + now + ".jpg")
+
+
+def print_image(channel):
+    # Connect to cups and select printer 0
+    conn = cups.Connection()
+    printers = conn.getPrinters()
+    printer_name = printers.keys()[0]
+
+    # get last image
+    files = filter(os.path.isfile, glob.glob(config.file_path + "/photobooth/*"))
+    files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+
+    # Lunch printing
+    conn.printFile(printer_name, files[0], "PhotoBooth", {})
+
 ##################
 #  Main Program  #
 ##################
+
 
 # clear the previously stored pics based on config settings
 if config.clear_on_startup:
@@ -476,8 +527,11 @@ if config.clear_on_startup:
 
 # Add event listener to catch shutdown request
 if config.enable_shutdown_btn:
-    GPIO.add_event_detect(shutdown_btn_pin, GPIO.BOTH,
-                          callback=shutdown, bouncetime=75)
+    GPIO.add_event_detect(shutdown_btn_pin, GPIO.FALLING, callback=shutdown, bouncetime=1000)
+
+# If printing enable, add event listener on print button
+if config.enable_print_btn:
+    GPIO.add_event_detect(print_btn_pin, GPIO.FALLING, callback=print_image, bouncetime=1000)
 
 print "Photo booth app running..."
 for x in range(0, 5):  # blink light to show the app is running
