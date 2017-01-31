@@ -4,8 +4,9 @@
 # https://api.tumblr.com/console/calls/user/info
 consumer_key = 'CONSUMER_KEY'  # replace with your key
 consumer_secret = 'CONSUMER_SECRET'  # replace with your secret code
-oath_token = 'OATH_TOKEN'  # replace with your oath token
-oath_secret = 'OATH_SECRET'  # replace with your oath secret code
+oauth_token = 'OAUTH_TOKEN'  # replace with your oauth token
+oauth_secret = 'OAUTH_SECRET'  # replace with your oauth secret code
+
 # replace with your tumblr account name without .tumblr.com
 tumblr_blog = 'TUMBLR_BLOG'
 tagsForTumblr = "MyTagsHere"  # change to tags you want, separated with commas
@@ -48,8 +49,8 @@ camera_iso = 800
 # if you run into resource issues, try smaller, like 1920x1152.
 # or increase memory
 # http://picamera.readthedocs.io/en/release-1.12/fov.html#hardware-limits
-camera_high_res_w = 1296 # width (max 2592)
-camera_high_res_h = 972  # height (max 1944)
+camera_high_res_w = 1296  # width
+camera_high_res_h = 972  # height
 
 # enable color on camera preview
 camera_color_preview = False
@@ -62,7 +63,8 @@ camera_landscape = True
 # myUser ALL = (root) NOPASSWD: /sbin/halt
 enable_shutdown_btn = False
 
-enable_print_btn = True
+# Printing configuration
+enable_print_btn = False
 
 # Debug mode
 debug_mode = False

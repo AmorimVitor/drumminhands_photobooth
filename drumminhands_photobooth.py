@@ -29,9 +29,9 @@ print_btn_pin = 12  # pin for the print button
 
 total_pics = 4  # number of pics to be taken
 capture_delay = 1  # delay between pics
-prep_delay = 3  # number of seconds at step 1 as users prep to have photo taken
+prep_delay = 5  # number of seconds at step 1 as users prep to have photo taken
 gif_delay = 100  # How much time between frames in the animated gif
-restart_delay = 5  # how long to display finished message before beginning a new session
+restart_delay = 10  # how long to display finished message before beginning a new session
 test_server = 'www.google.com'
 
 # full frame of v1 camera is 2592x1944. Wide screen max is 2592,1555
@@ -258,12 +258,10 @@ def display_pics(jpg_group):
             show_image(config.file_path + jpg_group + "-0" + str(i) + ".jpg")
             time.sleep(replay_delay)  # pause
 
-
 def start_photobooth():
     """
     @brief      Define the photo taking function for when the big button is pressed
     """
-
     # press escape to exit pygame. Then press ctrl-c to exit python.
     input(pygame.event.get())
 
@@ -289,7 +287,7 @@ def start_photobooth():
 
     if config.hi_res_pics:
         # set camera resolution to high res
-        camera.resolution = (high_res_w, high_res_h)         
+        camera.resolution = (high_res_w, high_res_h)
     else:
         pixel_width = 500  # maximum width of animated gif on tumblr
         pixel_height = config.monitor_h * pixel_width // config.monitor_w
@@ -304,7 +302,7 @@ def start_photobooth():
 
     # get the current date and time for the start of the filename
     now = time.strftime("%Y-%m-%d-%H-%M-%S")
-        
+
     if config.capture_count_pics:
         try:  # take the photos
             for i in range(1, total_pics + 1):
@@ -322,7 +320,8 @@ def start_photobooth():
                     camera.hflip = False  # flip back when taking photo
                 else: 
                     camera.vflip = False
-                camera.capture(filename)
+                os.system("aplay camera-shutter-sound.wav")  # Play sound
+				camera.capture(filename)
                 print(filename)
                 GPIO.output(led_pin, False)  # turn off the LED
                 show_image(real_path + "/pose" + str(i) + ".png")
@@ -333,7 +332,6 @@ def start_photobooth():
         finally:
             camera.close()
     else:
-        print("low resolution")
         # start preview at low res but the right ratio
         if config.camera_landscape:
             camera.start_preview(resolution=(config.monitor_w, config.monitor_h))
@@ -460,9 +458,8 @@ def start_photobooth():
 
     time.sleep(restart_delay)
     show_image(real_path + "/intro.png")
-    GPIO.output(led_pin, True)  # turn on the LED
-
-
+    GPIO.output(led_pin, True)  # turn on the LED    
+    
 def shutdown(channel):
     """
     @brief      Shutdown the RaspberryPi
@@ -475,7 +472,6 @@ def shutdown(channel):
 
 
 def photobooth_image(now):
-        
     # Load images
     bgimage = pygame.image.load("bgimage.png")
     image1 = pygame.image.load(config.file_path + now + "-01.jpg")
@@ -493,7 +489,7 @@ def photobooth_image(now):
     image2 = pygame.transform.scale(image2, (image_w, image_h))
     image3 = pygame.transform.scale(image3, (image_w, image_h))
     image4 = pygame.transform.scale(image4, (image_w, image_h))
-        
+
     # Merge images
     bgimage.blit(image1, (margin, margin))
     bgimage.blit(image2, (margin * 2 + image_w, margin))
